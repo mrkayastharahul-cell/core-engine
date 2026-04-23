@@ -102,10 +102,14 @@
     });
   }
 
-  // ===== FIND ONLY ₹1000 =====
+  // ===== EXACT MATCH FUNCTION =====
   function findTargets() {
     return Array.from(document.querySelectorAll(".ml10")).filter(el => {
-      return el.innerText.includes("₹1000");
+      const match = el.innerText.match(/\d+/);
+      if (!match) return false;
+
+      const amount = match[0];
+      return targets.includes(amount); // exact match only
     });
   }
 
@@ -127,8 +131,9 @@
   async function clickTargets(rows) {
     for (let row of rows) {
 
-      // DOUBLE CHECK (critical fix)
-      if (!row.innerText.includes("₹1000")) continue;
+      // double-check exact match
+      const match = row.innerText.match(/\d+/);
+      if (!match || !targets.includes(match[0])) continue;
 
       highlight(row);
 
@@ -138,7 +143,6 @@
         await sleep(1000); // 1 sec delay
         btn.click();
 
-        // check payment page
         if (document.body.innerText.includes("Select Payment Method")) {
           beep();
           running = false;
@@ -154,7 +158,6 @@
   async function loop() {
     while (running) {
 
-      // stop if already in payment page
       if (document.body.innerText.includes("Select Payment Method")) {
         beep();
         running = false;
@@ -170,9 +173,10 @@
 
       if (rows.length > 0) {
 
-        // 🔥 hide others (not remove, safer)
+        // hide non-matching safely
         document.querySelectorAll(".ml10").forEach(el => {
-          if (!rows.includes(el)) {
+          const match = el.innerText.match(/\d+/);
+          if (!match || !targets.includes(match[0])) {
             el.style.display = "none";
           } else {
             el.style.display = "";
@@ -195,7 +199,8 @@
       return;
     }
 
-    targets = ["1000"];
+    const val = document.getElementById("amount").value.trim();
+    targets = [val];
 
     running = true;
     status.innerText = "Running";
