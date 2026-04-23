@@ -7,18 +7,43 @@
 
   const KEY = "A1B2C3-RAHUL";
 
+  // ===== AUDIO (UNLOCKED ON USER CLICK) =====
+  let audioCtx;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  function beep() {
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.value = 800;
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+
+      setTimeout(() => osc.stop(), 500);
+    } catch (e) {
+      console.log("Beep failed");
+    }
+  }
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
   // ===== UI =====
   const box = document.createElement("div");
   box.style = `
-    position:fixed;
-    bottom:20px;
-    right:20px;
-    width:260px;
-    background:#fff;
-    color:#000;
-    padding:15px;
-    border-radius:14px;
-    z-index:999999;
+    position:fixed; bottom:20px; right:20px; width:260px;
+    background:#fff; color:#000; padding:15px;
+    border-radius:14px; z-index:999999;
     font-family:sans-serif;
     box-shadow:0 5px 20px rgba(0,0,0,0.3);
   `;
@@ -30,11 +55,8 @@
     </div>
 
     <input id="amount" value="1000" readonly style="
-      width:100%;
-      padding:8px;
-      border-radius:8px;
-      border:1px solid #ccc;
-      margin-bottom:10px;
+      width:100%; padding:8px; border-radius:8px;
+      border:1px solid #ccc; margin-bottom:10px;
     " />
 
     <div style="display:flex;gap:10px;">
@@ -50,13 +72,7 @@
   const status = document.getElementById("status");
   const light = document.getElementById("light");
 
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-
   function removeUI() { box.remove(); }
-
-  function beep() {
-    new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
-  }
 
   // ===== ACCESS =====
   let allowed = false;
@@ -83,18 +99,16 @@
 
   checkAccess();
 
-  // ===== CLICK DEFAULT =====
+  // ===== HELPERS =====
   function clickDefault() {
     document.querySelectorAll("p, div, span").forEach(el => {
       if (el.innerText.trim() === "Default") el.click();
     });
   }
 
-  // ===== GET EXACT AMOUNT =====
   function getAmount(el) {
     const amtEl = el.querySelector(".amount");
     if (!amtEl) return null;
-
     const match = amtEl.innerText.match(/\d+/);
     return match ? match[0] : null;
   }
@@ -104,10 +118,6 @@
       const amt = getAmount(el);
       return amt && targets.includes(amt);
     });
-  }
-
-  function highlight(el) {
-    el.style.outline = "3px solid red";
   }
 
   function findBuy(row) {
@@ -120,28 +130,29 @@
     return null;
   }
 
-  // ===== MOVE MATCHES TO TOP =====
   function moveMatchesToTop(rows) {
     const parent = rows[0]?.parentElement;
     if (!parent) return;
-
-    rows.reverse().forEach(row => {
-      parent.prepend(row);
-    });
+    rows.reverse().forEach(row => parent.prepend(row));
   }
 
-  // ===== CLICK FIRST MATCH ONLY =====
+  function isPaymentPage() {
+    return document.body.innerText.includes("Select Payment Method") ||
+           document.body.innerText.includes("UPI") ||
+           document.body.innerText.includes("Pay Now");
+  }
+
   async function clickTargets(rows) {
     const row = rows[0];
     if (!row) return false;
-
-    highlight(row);
 
     const btn = findBuy(row);
     if (btn) {
       btn.click();
 
-      if (document.body.innerText.includes("Select Payment Method")) {
+      await sleep(200); // allow page update
+
+      if (isPaymentPage()) {
         beep();
         running = false;
         removeUI();
@@ -151,11 +162,11 @@
     return false;
   }
 
-  // ===== MAIN LOOP =====
+  // ===== LOOP =====
   async function loop() {
     while (running) {
 
-      if (document.body.innerText.includes("Select Payment Method")) {
+      if (isPaymentPage()) {
         beep();
         running = false;
         removeUI();
@@ -168,10 +179,8 @@
 
       if (rows.length > 0) {
 
-        // move correct results to top
         moveMatchesToTop(rows);
 
-        // hide others
         document.querySelectorAll(".ml10").forEach(el => {
           const amt = getAmount(el);
           el.style.display = (amt && targets.includes(amt)) ? "" : "none";
@@ -181,7 +190,7 @@
         if (success) return;
       }
 
-      await sleep(1000); // ONLY delay
+      await sleep(1000);
     }
   }
 
@@ -191,6 +200,8 @@
       status.innerText = "Access Denied";
       return;
     }
+
+    initAudio(); // 🔥 unlock audio here
 
     targets = [document.getElementById("amount").value.trim()];
     running = true;
