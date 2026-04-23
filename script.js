@@ -147,7 +147,7 @@
     await sleep(300);
 
     if (isPaymentPage()) {
-      beep(); // 🔊 ONLY HERE
+      beep();
       running = false;
       removeUI();
       return true;
@@ -174,9 +174,12 @@
 
         moveMatchesToTop(rows);
 
+        // 🔥 STRICT FILTER (REMOVE ALL OTHERS)
         document.querySelectorAll(".ml10").forEach(el => {
           const amt = getAmount(el);
-          el.style.display = (amt && targets.includes(amt)) ? "" : "none";
+          if (!amt || !targets.includes(amt)) {
+            el.remove(); // ❗ only target remains
+          }
         });
 
         let success = await clickTargets(rows);
@@ -194,7 +197,7 @@
       return;
     }
 
-    initAudio(); // unlock sound
+    initAudio();
 
     targets = [document.getElementById("amount").value.trim()];
     running = true;
