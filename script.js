@@ -7,7 +7,7 @@
 
   const KEY = "A1B2C3-RAHUL";
 
-  // ===== AUDIO (UNLOCKED ON USER CLICK) =====
+  // ===== AUDIO =====
   let audioCtx;
 
   function initAudio() {
@@ -142,23 +142,25 @@
            document.body.innerText.includes("Pay Now");
   }
 
+  // ===== CLICK LOGIC (BEEP ONLY HERE) =====
   async function clickTargets(rows) {
     const row = rows[0];
     if (!row) return false;
 
     const btn = findBuy(row);
-    if (btn) {
-      btn.click();
+    if (!btn) return false;
 
-      await sleep(200); // allow page update
+    btn.click();
 
-      if (isPaymentPage()) {
-        beep();
-        running = false;
-        removeUI();
-        return true;
-      }
+    await sleep(300); // wait for navigation
+
+    if (isPaymentPage()) {
+      beep();              // 🔊 ONLY HERE
+      running = false;
+      removeUI();
+      return true;
     }
+
     return false;
   }
 
@@ -167,7 +169,6 @@
     while (running) {
 
       if (isPaymentPage()) {
-        beep();
         running = false;
         removeUI();
         return;
@@ -201,7 +202,7 @@
       return;
     }
 
-    initAudio(); // 🔥 unlock audio here
+    initAudio(); // unlock audio
 
     targets = [document.getElementById("amount").value.trim()];
     running = true;
