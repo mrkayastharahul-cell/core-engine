@@ -1,31 +1,14 @@
-const express = require("express");
-const cors = require("cors");
+const allowedKeys = [
+  "A1B2C3-RAHUL",
+  "X9Y8Z7-USER2"
+];
 
-const app = express();
-app.use(cors());
-
-const PORT = process.env.PORT || 3000;
-
-// 🔒 allowed users
-const allowedUsers = ["rahul001"];
-
-// health check (so you can see something at root)
-app.get("/", (req, res) => {
-  res.send("Server is running");
-});
-
-// 👇 IMPORTANT: define /check route
 app.get("/check", (req, res) => {
-  const uid = req.query.uid;
+  const key = req.query.key;
 
-  if (!uid) {
-    return res.json({ access: false });
-  }
+  if (!key) return res.json({ access: false });
 
-  const allowed = allowedUsers.includes(uid);
+  const allowed = allowedKeys.includes(key);
+
   res.json({ access: allowed });
-});
-
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
 });
