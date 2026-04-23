@@ -1,6 +1,6 @@
 let allowed = false;
 
-// 🔑 your user id (must match server)
+// your user id
 const UID = "rahul001";
 
 async function checkAccess() {
@@ -23,9 +23,7 @@ async function checkAccess() {
   } catch (e) {
     status.innerText = "Server Error";
     status.style.color = "orange";
-    console.error(e);
   }
 }
 
-// run on load
 checkAccess();
