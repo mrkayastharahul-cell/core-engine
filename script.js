@@ -50,11 +50,13 @@
   const status = document.getElementById("status");
   const light = document.getElementById("light");
 
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
   function removeUI() { box.remove(); }
+
   function beep() {
     new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
   }
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   // ===== ACCESS =====
   let allowed = false;
@@ -88,12 +90,12 @@
     });
   }
 
-  // ===== EXACT AMOUNT EXTRACTION (KEY FIX) =====
+  // ===== GET EXACT AMOUNT =====
   function getAmount(el) {
-    const amountEl = el.querySelector(".amount");
-    if (!amountEl) return null;
+    const amtEl = el.querySelector(".amount");
+    if (!amtEl) return null;
 
-    const match = amountEl.innerText.match(/\d+/);
+    const match = amtEl.innerText.match(/\d+/);
     return match ? match[0] : null;
   }
 
@@ -118,30 +120,38 @@
     return null;
   }
 
-  // ===== CLICK =====
+  // ===== MOVE MATCHES TO TOP =====
+  function moveMatchesToTop(rows) {
+    const parent = rows[0]?.parentElement;
+    if (!parent) return;
+
+    rows.reverse().forEach(row => {
+      parent.prepend(row);
+    });
+  }
+
+  // ===== CLICK FIRST MATCH ONLY =====
   async function clickTargets(rows) {
-    for (let row of rows) {
-      const amt = getAmount(row);
-      if (!amt || !targets.includes(amt)) continue;
+    const row = rows[0];
+    if (!row) return false;
 
-      highlight(row);
+    highlight(row);
 
-      const btn = findBuy(row);
-      if (btn) {
-        btn.click();
+    const btn = findBuy(row);
+    if (btn) {
+      btn.click();
 
-        if (document.body.innerText.includes("Select Payment Method")) {
-          beep();
-          running = false;
-          removeUI();
-          return true;
-        }
+      if (document.body.innerText.includes("Select Payment Method")) {
+        beep();
+        running = false;
+        removeUI();
+        return true;
       }
     }
     return false;
   }
 
-  // ===== LOOP (FAST) =====
+  // ===== MAIN LOOP =====
   async function loop() {
     while (running) {
 
@@ -158,7 +168,10 @@
 
       if (rows.length > 0) {
 
-        // hide others safely
+        // move correct results to top
+        moveMatchesToTop(rows);
+
+        // hide others
         document.querySelectorAll(".ml10").forEach(el => {
           const amt = getAmount(el);
           el.style.display = (amt && targets.includes(amt)) ? "" : "none";
@@ -181,6 +194,7 @@
 
     targets = [document.getElementById("amount").value.trim()];
     running = true;
+
     status.innerText = "Running";
     light.style.background = "lime";
 
