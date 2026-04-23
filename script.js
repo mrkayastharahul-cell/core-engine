@@ -1,26 +1,31 @@
-const express = require("express");
-const cors = require("cors");
+let allowed = false;
 
-const app = express();
-app.use(cors()); // 🔥 IMPORTANT
+// 🔑 your user id (must match server)
+const UID = "rahul001";
 
-const PORT = process.env.PORT || 3000;
+async function checkAccess() {
+  try {
+    const res = await fetch(`https://access-server.onrender.com/check?uid=${UID}`);
+    const data = await res.json();
 
-// 🔒 Allowed users
-const allowedUsers = [
-  "rahul001"
-];
+    allowed = data.access;
 
-app.get("/check", (req, res) => {
-  const uid = req.query.uid;
+    if (allowed) {
+      status.innerText = "Active";
+      status.style.color = "green";
+      light.style.background = "lime";
+    } else {
+      status.innerText = "Access Denied";
+      status.style.color = "red";
+      light.style.background = "red";
+    }
 
-  if (!uid) return res.json({ access: false });
+  } catch (e) {
+    status.innerText = "Server Error";
+    status.style.color = "orange";
+    console.error(e);
+  }
+}
 
-  const allowed = allowedUsers.includes(uid);
-
-  res.json({ access: allowed });
-});
-
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+// run on load
+checkAccess();
