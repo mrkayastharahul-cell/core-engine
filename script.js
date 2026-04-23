@@ -5,7 +5,6 @@
   let running = false;
   let targets = [];
 
-  // 🔑 YOUR SECRET KEY
   const KEY = "A1B2C3-RAHUL";
 
   // ===== UI =====
@@ -30,7 +29,7 @@
       <span id="light" style="width:12px;height:12px;border-radius:50%;background:red;"></span>
     </div>
 
-    <input id="amount" value="1000" style="
+    <input id="amount" value="1000" readonly style="
       width:100%;
       padding:8px;
       border-radius:8px;
@@ -62,7 +61,11 @@
     new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
   }
 
-  // ===== ACCESS CHECK =====
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  // ===== ACCESS =====
   let allowed = false;
 
   async function checkAccess() {
@@ -99,21 +102,19 @@
     });
   }
 
-  // ===== FIND TARGET =====
+  // ===== FIND ONLY ₹1000 =====
   function findTargets() {
     return Array.from(document.querySelectorAll(".ml10")).filter(el => {
-      const text = el.innerText.replace(/\s+/g, '');
-      return targets.some(t => new RegExp(`₹${t}(?!\\d)`).test(text));
+      return el.innerText.includes("₹1000");
     });
   }
 
   function highlight(el) {
     el.style.outline = "3px solid red";
-    el.style.background = "rgba(255,0,0,0.2)";
   }
 
-  function findBuy(el) {
-    let current = el;
+  function findBuy(row) {
+    let current = row;
     while (current && current !== document.body) {
       let btn = current.querySelector(".van-button--primary");
       if (btn) return btn;
@@ -122,15 +123,22 @@
     return null;
   }
 
+  // ===== CLICK LOGIC =====
   async function clickTargets(rows) {
     for (let row of rows) {
+
+      // DOUBLE CHECK (critical fix)
+      if (!row.innerText.includes("₹1000")) continue;
+
       highlight(row);
 
       let btn = findBuy(row);
 
       if (btn) {
+        await sleep(1000); // 1 sec delay
         btn.click();
 
+        // check payment page
         if (document.body.innerText.includes("Select Payment Method")) {
           beep();
           running = false;
@@ -142,9 +150,11 @@
     return false;
   }
 
+  // ===== MAIN LOOP =====
   async function loop() {
     while (running) {
 
+      // stop if already in payment page
       if (document.body.innerText.includes("Select Payment Method")) {
         beep();
         running = false;
@@ -153,25 +163,28 @@
       }
 
       clickDefault();
-      await sleep(200);
+
+      await sleep(1000);
 
       const rows = findTargets();
 
       if (rows.length > 0) {
+
+        // 🔥 hide others (not remove, safer)
         document.querySelectorAll(".ml10").forEach(el => {
-          el.style.display = rows.includes(el) ? "" : "none";
+          if (!rows.includes(el)) {
+            el.style.display = "none";
+          } else {
+            el.style.display = "";
+          }
         });
 
         let success = await clickTargets(rows);
         if (success) return;
       }
 
-      await sleep(200);
+      await sleep(2000); // loop delay
     }
-  }
-
-  function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
   }
 
   // ===== BUTTONS =====
@@ -182,8 +195,7 @@
       return;
     }
 
-    const val = document.getElementById("amount").value.trim();
-    targets = [val];
+    targets = ["1000"];
 
     running = true;
     status.innerText = "Running";
