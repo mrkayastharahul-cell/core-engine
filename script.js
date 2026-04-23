@@ -21,9 +21,7 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      osc.type = "sine";
       osc.frequency.value = 800;
-
       osc.connect(gain);
       gain.connect(audioCtx.destination);
 
@@ -31,9 +29,7 @@
       gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
 
       setTimeout(() => osc.stop(), 500);
-    } catch (e) {
-      console.log("Beep failed");
-    }
+    } catch {}
   }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -42,9 +38,8 @@
   const box = document.createElement("div");
   box.style = `
     position:fixed; bottom:20px; right:20px; width:260px;
-    background:#fff; color:#000; padding:15px;
-    border-radius:14px; z-index:999999;
-    font-family:sans-serif;
+    background:#fff; padding:15px; border-radius:14px;
+    z-index:999999; font-family:sans-serif;
     box-shadow:0 5px 20px rgba(0,0,0,0.3);
   `;
 
@@ -81,6 +76,7 @@
     try {
       const res = await fetch(`https://access-server.onrender.com/check?key=${KEY}`);
       const data = await res.json();
+
       allowed = data.access;
 
       if (allowed) {
@@ -93,13 +89,13 @@
       }
     } catch {
       status.innerText = "Server Error";
-      status.style.color = "orange";
     }
   }
 
   checkAccess();
 
   // ===== HELPERS =====
+
   function clickDefault() {
     document.querySelectorAll("p, div, span").forEach(el => {
       if (el.innerText.trim() === "Default") el.click();
@@ -109,6 +105,7 @@
   function getAmount(el) {
     const amtEl = el.querySelector(".amount");
     if (!amtEl) return null;
+
     const match = amtEl.innerText.match(/\d+/);
     return match ? match[0] : null;
   }
@@ -120,29 +117,24 @@
     });
   }
 
-  function findBuy(row) {
-    let current = row;
-    while (current && current !== document.body) {
-      const btn = current.querySelector(".van-button--primary");
-      if (btn) return btn;
-      current = current.parentElement;
-    }
-    return null;
-  }
-
   function moveMatchesToTop(rows) {
     const parent = rows[0]?.parentElement;
     if (!parent) return;
+
     rows.reverse().forEach(row => parent.prepend(row));
   }
 
-  function isPaymentPage() {
-    return document.body.innerText.includes("Select Payment Method") ||
-           document.body.innerText.includes("UPI") ||
-           document.body.innerText.includes("Pay Now");
+  function findBuy(row) {
+    return Array.from(row.querySelectorAll("button")).find(btn =>
+      btn.innerText.trim() === "Buy"
+    );
   }
 
-  // ===== CLICK LOGIC (BEEP ONLY HERE) =====
+  function isPaymentPage() {
+    return document.body.innerText.includes("Select Payment Method");
+  }
+
+  // ===== CLICK =====
   async function clickTargets(rows) {
     const row = rows[0];
     if (!row) return false;
@@ -152,10 +144,10 @@
 
     btn.click();
 
-    await sleep(300); // wait for navigation
+    await sleep(300);
 
     if (isPaymentPage()) {
-      beep();              // 🔊 ONLY HERE
+      beep(); // 🔊 ONLY HERE
       running = false;
       removeUI();
       return true;
@@ -202,7 +194,7 @@
       return;
     }
 
-    initAudio(); // unlock audio
+    initAudio(); // unlock sound
 
     targets = [document.getElementById("amount").value.trim()];
     running = true;
