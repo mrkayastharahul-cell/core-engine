@@ -9,7 +9,6 @@
 
   // ===== AUDIO =====
   let audioCtx;
-
   function initAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -95,7 +94,6 @@
   checkAccess();
 
   // ===== HELPERS =====
-
   function clickDefault() {
     document.querySelectorAll("p, div, span").forEach(el => {
       if (el.innerText.trim() === "Default") el.click();
@@ -134,7 +132,6 @@
     return document.body.innerText.includes("Select Payment Method");
   }
 
-  // ===== CLICK =====
   async function clickTargets(rows) {
     const row = rows[0];
     if (!row) return false;
@@ -143,7 +140,6 @@
     if (!btn) return false;
 
     btn.click();
-
     await sleep(300);
 
     if (isPaymentPage()) {
@@ -174,11 +170,10 @@
 
         moveMatchesToTop(rows);
 
-        // 🔥 STRICT FILTER (REMOVE ALL OTHERS)
         document.querySelectorAll(".ml10").forEach(el => {
           const amt = getAmount(el);
           if (!amt || !targets.includes(amt)) {
-            el.remove(); // ❗ only target remains
+            el.remove();
           }
         });
 
